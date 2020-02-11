@@ -1,4 +1,4 @@
-module ton-api
+module github.com/tonradar/ton-api
 
 go 1.13
 
