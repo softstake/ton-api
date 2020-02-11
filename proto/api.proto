@@ -3,10 +3,12 @@ syntax = "proto3";
 
 package api;
 
-//import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
 
 service TonApi {
     rpc FetchTransactions (FetchTransactionsRequest) returns (FetchTransactionsResponse) {}
+    rpc GetAccountState (GetAccountStateRequest) returns (GetAccountStateResponse) {}
+    rpc RunGetMethod (RunGetMethodRequest) returns (RunGetMethodResponse) {}
 }
 
 message FetchTransactionsRequest {
@@ -43,4 +45,29 @@ message RawMessage {
 message InternalTransactionId {
     string hash = 1;
     int64 lt = 2;
+}
+
+message GetAccountStateRequest {
+    string account_address = 1;
+}
+
+message GetAccountStateResponse {
+    int64 balance = 1;
+    string code = 2;
+    string data = 3;
+    string frozen_hash = 4;
+    InternalTransactionId last_transaction_id = 5;
+    int64 sync_utime = 6;
+}
+
+message RunGetMethodRequest {
+    int64 id = 1;
+    int32 method = 2;
+    repeated google.protobuf.Any stack = 3;
+}
+
+message RunGetMethodResponse {
+    int32 exit_code = 1;
+    int64 gas_used = 2;
+    repeated google.protobuf.Any stack = 3;
 }

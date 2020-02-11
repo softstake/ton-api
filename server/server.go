@@ -87,9 +87,15 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 		trxs = append(trxs, &tmp)
 	}
 
-	fmt.Println("TRANSACTIONS:", trxs)
-
 	return &pb.FetchTransactionsResponse{
 		Items: trxs,
 	}, nil
+}
+
+func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountStateRequest) (*pb.GetAccountStateResponse, error) {
+	resp, err := s.api.RawGetAccountState(tonlib.NewAccountAddress(in.Address))
+}
+
+func (s *TonApiServer) RunGetMethod(ctx context.Context, in *pb.RunGetMethodRequest) (*pb.RunGetMethodResponse, error) {
+	resp, err := s.api.SmcRunGetMethod()
 }
