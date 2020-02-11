@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/mercuryoio/tonlib-go"
-	"ton-api/config"
-	pb "ton-api/proto"
+	"github.com/tonradar/ton-api/config"
+	pb "github.com/tonradar/ton-api/proto"
 )
 
 type TonApiServer struct {
@@ -41,7 +41,7 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 		return nil, err
 	}
 
-	trxs := make([]*pb.Transaction, 10)
+	trxs := make([]*pb.Transaction, 0)
 
 	for _, trx := range resp.Transactions {
 		inMsg := pb.RawMessage{
@@ -55,7 +55,7 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 			Value:       int64(trx.InMsg.Value),
 		}
 
-		outMsgs := make([]*pb.RawMessage, 5)
+		outMsgs := make([]*pb.RawMessage, 0)
 		for _, msg := range trx.OutMsgs {
 			tmp := &pb.RawMessage{
 				BodyHash:    msg.BodyHash,
@@ -86,6 +86,8 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 		}
 		trxs = append(trxs, &tmp)
 	}
+
+	fmt.Println("TRANSACTIONS:", trxs)
 
 	return &pb.FetchTransactionsResponse{
 		Items: trxs,

@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/tonradar/ton-api/config"
+	pb "github.com/tonradar/ton-api/proto"
+	"github.com/tonradar/ton-api/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
-	"ton-api/config"
-	pb "ton-api/proto"
-	"ton-api/server"
 )
 
 func main() {
