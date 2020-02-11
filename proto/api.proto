@@ -1,0 +1,46 @@
+//protoc -I . api.proto --go_out=plugins=grpc:.
+syntax = "proto3";
+
+package api;
+
+//import "google/protobuf/timestamp.proto";
+
+service TonApi {
+    rpc FetchTransactions (FetchTransactionsRequest) returns (FetchTransactionsResponse) {}
+}
+
+message FetchTransactionsRequest {
+    string address = 1;
+    int64 lt = 2;
+    string hash = 3;
+}
+
+message FetchTransactionsResponse {
+    repeated Transaction items = 1;
+}
+
+message Transaction {
+    string data = 1;
+    int64 fee = 2;
+    RawMessage in_msg = 3;
+    int64 other_fee = 4;
+    repeated RawMessage out_msgs = 5;
+    int64 storage_fee = 6;
+    InternalTransactionId transaction_id = 7;
+}
+
+message RawMessage {
+    string body_hash = 1;
+    int64 created_lt = 2;
+    string destination = 3;
+    int64 fwd_fee = 4;
+    int64 ihr_fee = 5;
+    string message = 6;
+    string source = 7;
+    int64 value = 8;
+}
+
+message InternalTransactionId {
+    string hash = 1;
+    int64 lt = 2;
+}

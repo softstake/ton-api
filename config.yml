@@ -1,0 +1,5 @@
+TonAPI:
+  TonConfig: "tonlib.config.json.example"
+  DiceAddress: "kQBORXUnT4HjFLxx06X9b0VONDJeHDOGrJe5MbYwIjieWYvJ"
+  LiteClient: "bin/lite-client"
+  LiteClientConfig: "ton-lite-client-test1.config.json"
