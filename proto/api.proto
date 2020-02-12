@@ -71,3 +71,23 @@ message RunGetMethodResponse {
     int64 gas_used = 2;
     repeated google.protobuf.Any stack = 3;
 }
+
+message TvmStackEntryCell {
+    string bytes = 1;
+}
+
+message TvmStackEntryList {
+    repeated google.protobuf.Any list = 1;
+}
+
+message TvmStackEntryNumber {
+    string number = 1;
+}
+
+message TvmStackEntrySlice {
+    string bytes = 1;
+}
+
+message TvmStackEntryTuple {
+    repeated google.protobuf.Any elements = 1;
+}
