@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mercuryoio/tonlib-go"
 	"github.com/tonradar/ton-api/config"
 	pb "github.com/tonradar/ton-api/proto"
@@ -93,9 +95,73 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 }
 
 func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountStateRequest) (*pb.GetAccountStateResponse, error) {
-	resp, err := s.api.RawGetAccountState(tonlib.NewAccountAddress(in.Address))
+	resp, err := s.api.RawGetAccountState(tonlib.NewAccountAddress(in.AccountAddress))
+	if err != nil {
+		return nil, err
+	}
+
+	transactionId := &pb.InternalTransactionId{
+		Hash: resp.LastTransactionId.Hash,
+		Lt:   int64(resp.LastTransactionId.Lt),
+	}
+
+	return &pb.GetAccountStateResponse{
+		Balance:           int64(resp.Balance),
+		Code:              resp.Code,
+		Data:              resp.Data,
+		FrozenHash:        resp.FrozenHash,
+		LastTransactionId: transactionId,
+		SyncUtime:         resp.SyncUtime,
+	}, nil
 }
 
 func (s *TonApiServer) RunGetMethod(ctx context.Context, in *pb.RunGetMethodRequest) (*pb.RunGetMethodResponse, error) {
-	resp, err := s.api.SmcRunGetMethod()
+	methodId := tonlib.SmcMethodId(in.Method)
+	stack := make([]tonlib.TvmStackEntry, 0)
+	for _, el := range in.Stack {
+		stack = append(stack, el)
+	}
+	resp, err := s.api.SmcRunGetMethod(in.Id, &methodId, stack)
+	if err != nil {
+		return nil, err
+	}
+
+	tmp := make([]*any.Any, 0)
+	for _, el := range resp.Stack {
+		switch t := el.(type) {
+		case tonlib.TvmStackEntryCell:
+			msg := &pb.TvmStackEntryCell{
+				Bytes: t.Cell.Bytes,
+			}
+			any, err := ptypes.MarshalAny(msg)
+			if err != nil {
+				return nil, err
+			}
+			tmp = append(tmp, any)
+		case tonlib.TvmStackEntryNumber:
+			msg := &pb.TvmStackEntryNumber{
+				Number: string(*t.Number),
+			}
+			any, err := ptypes.MarshalAny(msg)
+			if err != nil {
+				return nil, err
+			}
+			tmp = append(tmp, any)
+		case tonlib.TvmStackEntrySlice:
+			msg := &pb.TvmStackEntrySlice{
+				Bytes: t.Slice.Bytes,
+			}
+			any, err := ptypes.MarshalAny(msg)
+			if err != nil {
+				return nil, err
+			}
+			tmp = append(tmp, any)
+		}
+	}
+
+	return &pb.RunGetMethodResponse{
+		ExitCode: resp.ExitCode,
+		GasUsed:  resp.GasUsed,
+		Stack:    tmp,
+	}, nil
 }
