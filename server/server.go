@@ -8,6 +8,7 @@ import (
 	"github.com/mercuryoio/tonlib-go"
 	"github.com/tonradar/ton-api/config"
 	pb "github.com/tonradar/ton-api/proto"
+	"log"
 )
 
 type TonApiServer struct {
@@ -26,7 +27,7 @@ func NewTonApiServer(conf config.Config) (*TonApiServer, error) {
 		*options,
 	}
 
-	client, err := tonlib.NewClient(&req, tonlib.Config{}, 5)
+	client, err := tonlib.NewClient(&req, tonlib.Config{}, 10)
 	if err != nil {
 		return nil, fmt.Errorf("Init client error, error: %v", err)
 	}
@@ -38,7 +39,7 @@ func NewTonApiServer(conf config.Config) (*TonApiServer, error) {
 }
 
 func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransactionsRequest) (*pb.FetchTransactionsResponse, error) {
-	resp, err := s.api.RawGetTransactions(tonlib.NewAccountAddress(in.Address), tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)))
+	resp, err := s.api.RawGetTransactions(tonlib.NewAccountAddress(in.Address), tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +101,7 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 		return nil, err
 	}
 
+	fmt.Printf("RESPONSE: %v", resp)
 	transactionId := &pb.InternalTransactionId{
 		Hash: resp.LastTransactionId.Hash,
 		Lt:   int64(resp.LastTransactionId.Lt),
@@ -116,12 +118,18 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 }
 
 func (s *TonApiServer) RunGetMethod(ctx context.Context, in *pb.RunGetMethodRequest) (*pb.RunGetMethodResponse, error) {
+	address := tonlib.NewAccountAddress(s.conf.TonAPI.DiceAddress)
+	smcInfo, err := s.api.SmcLoad(address)
+	if err != nil {
+		log.Fatalln("smc.load failed", err)
+	}
+
 	methodId := tonlib.SmcMethodId(in.Method)
 	stack := make([]tonlib.TvmStackEntry, 0)
 	for _, el := range in.Stack {
 		stack = append(stack, el)
 	}
-	resp, err := s.api.SmcRunGetMethod(in.Id, &methodId, stack)
+	resp, err := s.api.SmcRunGetMethod(smcInfo.Id, &methodId, stack)
 	if err != nil {
 		return nil, err
 	}
