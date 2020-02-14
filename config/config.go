@@ -10,6 +10,7 @@ var configType = "yml"
 type TonApiConfig struct {
 	TonConfig        string
 	DiceAddress      string
+	GetBetMethodID   int32
 	LiteClient       string
 	LiteClientConfig string
 }

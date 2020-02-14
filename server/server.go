@@ -3,12 +3,10 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mercuryoio/tonlib-go"
 	"github.com/tonradar/ton-api/config"
 	pb "github.com/tonradar/ton-api/proto"
-	"log"
+	"strconv"
 )
 
 type TonApiServer struct {
@@ -39,7 +37,7 @@ func NewTonApiServer(conf config.Config) (*TonApiServer, error) {
 }
 
 func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransactionsRequest) (*pb.FetchTransactionsResponse, error) {
-	resp, err := s.api.RawGetTransactions(tonlib.NewAccountAddress(in.Address), tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)), nil)
+	resp, err := s.api.RawGetTransactions(tonlib.NewAccountAddress(in.Address), tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)))
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +99,6 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 		return nil, err
 	}
 
-	fmt.Printf("RESPONSE: %v", resp)
 	transactionId := &pb.InternalTransactionId{
 		Hash: resp.LastTransactionId.Hash,
 		Lt:   int64(resp.LastTransactionId.Lt),
@@ -117,59 +114,38 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 	}, nil
 }
 
-func (s *TonApiServer) RunGetMethod(ctx context.Context, in *pb.RunGetMethodRequest) (*pb.RunGetMethodResponse, error) {
+func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest) (*pb.GetBetSeedResponse, error) {
 	address := tonlib.NewAccountAddress(s.conf.TonAPI.DiceAddress)
 	smcInfo, err := s.api.SmcLoad(address)
 	if err != nil {
-		log.Fatalln("smc.load failed", err)
+		return nil, err
 	}
+	methodId := tonlib.SmcMethodId(s.conf.TonAPI.GetBetMethodID)
 
-	methodId := tonlib.SmcMethodId(in.Method)
-	stack := make([]tonlib.TvmStackEntry, 0)
-	for _, el := range in.Stack {
-		stack = append(stack, el)
+	betId := tonlib.TvmNumber(strconv.Itoa(int(in.BetId)))
+	betID := tonlib.TvmStackEntryNumber{
+		Number: &betId,
 	}
-	resp, err := s.api.SmcRunGetMethod(smcInfo.Id, &methodId, stack)
+	stack := make([]tonlib.TvmStackEntry, 0)
+	stack = append(stack, betID)
+
+	res, err := s.runGetMethod(smcInfo.Id, &methodId, stack)
 	if err != nil {
 		return nil, err
 	}
 
-	tmp := make([]*any.Any, 0)
-	for _, el := range resp.Stack {
-		switch t := el.(type) {
-		case tonlib.TvmStackEntryCell:
-			msg := &pb.TvmStackEntryCell{
-				Bytes: t.Cell.Bytes,
-			}
-			any, err := ptypes.MarshalAny(msg)
-			if err != nil {
-				return nil, err
-			}
-			tmp = append(tmp, any)
-		case tonlib.TvmStackEntryNumber:
-			msg := &pb.TvmStackEntryNumber{
-				Number: string(*t.Number),
-			}
-			any, err := ptypes.MarshalAny(msg)
-			if err != nil {
-				return nil, err
-			}
-			tmp = append(tmp, any)
-		case tonlib.TvmStackEntrySlice:
-			msg := &pb.TvmStackEntrySlice{
-				Bytes: t.Slice.Bytes,
-			}
-			any, err := ptypes.MarshalAny(msg)
-			if err != nil {
-				return nil, err
-			}
-			tmp = append(tmp, any)
-		}
+	fmt.Printf("RESULT STACK: %v", res)
+
+	return &pb.GetBetSeedResponse{
+		Seed: res[0].(string),
+	}, nil
+}
+
+func (s *TonApiServer) runGetMethod(id int64, method *tonlib.SmcMethodId, stack []tonlib.TvmStackEntry) ([]tonlib.TvmStackEntry, error) {
+	resp, err := s.api.SmcRunGetMethod(id, method, stack)
+	if err != nil {
+		return nil, err
 	}
 
-	return &pb.RunGetMethodResponse{
-		ExitCode: resp.ExitCode,
-		GasUsed:  resp.GasUsed,
-		Stack:    tmp,
-	}, nil
+	return resp.Stack, nil
 }

@@ -3,12 +3,13 @@ syntax = "proto3";
 
 package api;
 
-import "google/protobuf/any.proto";
+//import "google/protobuf/any.proto";
 
 service TonApi {
     rpc FetchTransactions (FetchTransactionsRequest) returns (FetchTransactionsResponse) {}
     rpc GetAccountState (GetAccountStateRequest) returns (GetAccountStateResponse) {}
-    rpc RunGetMethod (RunGetMethodRequest) returns (RunGetMethodResponse) {}
+    // rpc RunGetMethod (RunGetMethodRequest) returns (RunGetMethodResponse) {}
+    rpc GetBetSeed (GetBetSeedRequest) returns (GetBetSeedResponse) {}
 }
 
 message FetchTransactionsRequest {
@@ -60,34 +61,42 @@ message GetAccountStateResponse {
     int64 sync_utime = 6;
 }
 
-message RunGetMethodRequest {
-    int64 id = 1;
-    int32 method = 2;
-    repeated google.protobuf.Any stack = 3;
+//message RunGetMethodRequest {
+//    int64 id = 1;
+//    int32 method = 2;
+//    repeated google.protobuf.Any stack = 3;
+//}
+//
+//message RunGetMethodResponse {
+//    int32 exit_code = 1;
+//    int64 gas_used = 2;
+//    repeated google.protobuf.Any stack = 3;
+//}
+//
+//message TvmStackEntryCell {
+//    string bytes = 1;
+//}
+//
+//message TvmStackEntryList {
+//    repeated google.protobuf.Any list = 1;
+//}
+//
+//message TvmStackEntryNumber {
+//    string number = 1;
+//}
+//
+//message TvmStackEntrySlice {
+//    string bytes = 1;
+//}
+//
+//message TvmStackEntryTuple {
+//    repeated google.protobuf.Any elements = 1;
+//}
+
+message GetBetSeedRequest {
+    int64 bet_id = 1;
 }
 
-message RunGetMethodResponse {
-    int32 exit_code = 1;
-    int64 gas_used = 2;
-    repeated google.protobuf.Any stack = 3;
-}
-
-message TvmStackEntryCell {
-    string bytes = 1;
-}
-
-message TvmStackEntryList {
-    repeated google.protobuf.Any list = 1;
-}
-
-message TvmStackEntryNumber {
-    string number = 1;
-}
-
-message TvmStackEntrySlice {
-    string bytes = 1;
-}
-
-message TvmStackEntryTuple {
-    repeated google.protobuf.Any elements = 1;
+message GetBetSeedResponse {
+    string seed = 1;
 }
