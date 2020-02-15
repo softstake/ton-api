@@ -120,28 +120,50 @@ func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest)
 	if err != nil {
 		return nil, err
 	}
-	methodId := tonlib.SmcMethodId(s.conf.TonAPI.GetBetMethodID)
 
-	betId := tonlib.TvmNumber(strconv.Itoa(int(in.BetId)))
-	betID := tonlib.TvmStackEntryNumber{
+	methodName := "get_bet_seed"
+	methodID := struct {
+		Type  string `json:"@type"`
+		Extra string `json:"@extra"`
+		Name  string `json:"name"`
+	}{
+		Type: "smc.methodIdName",
+		Name: methodName,
+	}
+
+	betId := struct {
+		Type   string `json:"@type"`
+		Extra  string `json:"@extra"`
+		Number string `json:"number"`
+	}{
+		Type:   "tvm.numberDecimal",
+		Number: strconv.Itoa(int(in.BetId)),
+	}
+
+	betID := struct {
+		Type   string      `json:"@type"`
+		Extra  string      `json:"@extra"`
+		Number interface{} `json:"number"`
+	}{
+		Type:   "tvm.stackEntryNumber",
 		Number: &betId,
 	}
+
 	stack := make([]tonlib.TvmStackEntry, 0)
 	stack = append(stack, betID)
 
-	res, err := s.runGetMethod(smcInfo.Id, &methodId, stack)
+	res, err := s.runGetMethod(smcInfo.Id, methodID, stack)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Printf("RESULT STACK: %v", res)
+	resNum := res[0].(map[string]interface{})["number"].(map[string]interface{})["number"].(string)
 
 	return &pb.GetBetSeedResponse{
-		Seed: res[0].(string),
+		Seed: resNum,
 	}, nil
 }
 
-func (s *TonApiServer) runGetMethod(id int64, method *tonlib.SmcMethodId, stack []tonlib.TvmStackEntry) ([]tonlib.TvmStackEntry, error) {
+func (s *TonApiServer) runGetMethod(id int64, method interface{}, stack []tonlib.TvmStackEntry) ([]tonlib.TvmStackEntry, error) {
 	resp, err := s.api.SmcRunGetMethod(id, method, stack)
 	if err != nil {
 		return nil, err
