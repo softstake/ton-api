@@ -7,11 +7,13 @@ import (
 	"github.com/tonradar/ton-api/config"
 	pb "github.com/tonradar/ton-api/proto"
 	"strconv"
+	"sync"
 )
 
 type TonApiServer struct {
-	conf config.Config
-	api  *tonlib.Client
+	conf    config.Config
+	api     *tonlib.Client
+	apiLock sync.Mutex
 }
 
 func NewTonApiServer(conf config.Config) (*TonApiServer, error) {
@@ -37,10 +39,12 @@ func NewTonApiServer(conf config.Config) (*TonApiServer, error) {
 }
 
 func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransactionsRequest) (*pb.FetchTransactionsResponse, error) {
+	s.apiLock.Lock()
 	resp, err := s.api.RawGetTransactions(tonlib.NewAccountAddress(in.Address), tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)))
 	if err != nil {
 		return nil, err
 	}
+	s.apiLock.Unlock()
 
 	trxs := make([]*pb.Transaction, 0)
 
@@ -94,10 +98,12 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 }
 
 func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountStateRequest) (*pb.GetAccountStateResponse, error) {
+	s.apiLock.Lock()
 	resp, err := s.api.RawGetAccountState(tonlib.NewAccountAddress(in.AccountAddress))
 	if err != nil {
 		return nil, err
 	}
+	s.apiLock.Unlock()
 
 	transactionId := &pb.InternalTransactionId{
 		Hash: resp.LastTransactionId.Hash,
@@ -115,11 +121,13 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 }
 
 func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest) (*pb.GetBetSeedResponse, error) {
+	s.apiLock.Lock()
 	address := tonlib.NewAccountAddress(s.conf.TonAPI.DiceAddress)
 	smcInfo, err := s.api.SmcLoad(address)
 	if err != nil {
 		return nil, err
 	}
+	s.apiLock.Unlock()
 
 	methodName := "get_bet_seed"
 	methodID := struct {
@@ -164,10 +172,12 @@ func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest)
 }
 
 func (s *TonApiServer) runGetMethod(id int64, method interface{}, stack []tonlib.TvmStackEntry) ([]tonlib.TvmStackEntry, error) {
+	s.apiLock.Lock()
 	resp, err := s.api.SmcRunGetMethod(id, method, stack)
 	if err != nil {
 		return nil, err
 	}
+	s.apiLock.Unlock()
 
 	return resp.Stack, nil
 }
