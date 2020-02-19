@@ -3,9 +3,9 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/mercuryoio/tonlib-go"
 	"github.com/tonradar/ton-api/config"
 	pb "github.com/tonradar/ton-api/proto"
+	"github.com/tonradar/tonlib-go"
 	"strconv"
 	"sync"
 )
