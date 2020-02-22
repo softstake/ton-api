@@ -106,7 +106,7 @@ message GetBetSeedResponse {
 message GetSeqnoRequest {}
 
 message GetSeqnoResponse {
-    int32 seqno = 1;
+    string seqno = 1;
 }
 
 message SendMessageRequest {

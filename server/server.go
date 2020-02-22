@@ -199,7 +199,7 @@ func (s *TonApiServer) GetSeqno(ctx context.Context, in *pb.GetSeqnoRequest) (*p
 
 	fmt.Println("seqno:", res)
 
-	resNum := res[0].(map[string]interface{})["number"].(map[string]interface{})["number"].(int32)
+	resNum := res[0].(map[string]interface{})["number"].(map[string]interface{})["number"].(string)
 
 	return &pb.GetSeqnoResponse{
 		Seqno: resNum,
