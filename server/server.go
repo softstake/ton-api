@@ -171,6 +171,56 @@ func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest)
 	}, nil
 }
 
+func (s *TonApiServer) GetSeqno(ctx context.Context, in *pb.GetSeqnoRequest) (*pb.GetSeqnoResponse, error) {
+	s.apiLock.Lock()
+	address := tonlib.NewAccountAddress(s.conf.TonAPI.DiceAddress)
+	smcInfo, err := s.api.SmcLoad(address)
+	if err != nil {
+		return nil, err
+	}
+	s.apiLock.Unlock()
+
+	methodName := "get_seqno"
+	methodID := struct {
+		Type  string `json:"@type"`
+		Extra string `json:"@extra"`
+		Name  string `json:"name"`
+	}{
+		Type: "smc.methodIdName",
+		Name: methodName,
+	}
+
+	stack := make([]tonlib.TvmStackEntry, 0)
+
+	res, err := s.runGetMethod(smcInfo.Id, methodID, stack)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("seqno:", res)
+
+	resNum := res[0].(map[string]interface{})["number"].(map[string]interface{})["number"].(int32)
+
+	return &pb.GetSeqnoResponse{
+		Seqno: resNum,
+	}, nil
+}
+
+func (s *TonApiServer) SendMessage(ctx context.Context, in *pb.SendMessageRequest) (*pb.SendMessageResponse, error) {
+	s.apiLock.Lock()
+	resp, err := s.api.RawSendMessage(in.Body)
+	if err != nil {
+		return nil, err
+	}
+	s.apiLock.Unlock()
+
+	fmt.Println("send message response:", resp)
+
+	return &pb.SendMessageResponse{
+		Ok: resp.Type,
+	}, nil
+}
+
 func (s *TonApiServer) runGetMethod(id int64, method interface{}, stack []tonlib.TvmStackEntry) ([]tonlib.TvmStackEntry, error) {
 	s.apiLock.Lock()
 	resp, err := s.api.SmcRunGetMethod(id, method, stack)

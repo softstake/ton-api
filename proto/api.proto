@@ -10,6 +10,8 @@ service TonApi {
     rpc GetAccountState (GetAccountStateRequest) returns (GetAccountStateResponse) {}
     // rpc RunGetMethod (RunGetMethodRequest) returns (RunGetMethodResponse) {}
     rpc GetBetSeed (GetBetSeedRequest) returns (GetBetSeedResponse) {}
+    rpc GetSeqno (GetSeqnoRequest) returns (GetSeqnoResponse) {}
+    rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {}
 }
 
 message FetchTransactionsRequest {
@@ -99,4 +101,18 @@ message GetBetSeedRequest {
 
 message GetBetSeedResponse {
     string seed = 1;
+}
+
+message GetSeqnoRequest {}
+
+message GetSeqnoResponse {
+    int32 seqno = 1;
+}
+
+message SendMessageRequest {
+    bytes body = 1;
+}
+
+message SendMessageResponse {
+    string ok = 1;
 }

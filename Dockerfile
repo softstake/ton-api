@@ -11,7 +11,6 @@ WORKDIR /go/src/build
 ADD . .
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -installsuffix cgo -o ton-api ./cmd
 
-
 FROM frolvlad/alpine-glibc
 COPY --from=builder /go/src/build/ton-api /usr/local/bin/app/
 COPY --from=builder /go/src/build/config.yml /usr/local/bin/app/
