@@ -19,4 +19,4 @@ COPY --from=builder /go/src/build/lib/linux /usr/lib/
 RUN apk add --no-cache libstdc++
 WORKDIR /usr/local/bin/app/
 RUN mkdir test.keys
-CMD ["./ton-api"]
+ENTRYPOINT ./ton-api
