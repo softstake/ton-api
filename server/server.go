@@ -2,18 +2,24 @@ package server
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/tonradar/ton-api/config"
 	pb "github.com/tonradar/ton-api/proto"
-	"github.com/tonradar/tonlib-go"
+	tonlib "github.com/tonradar/tonlib-go/v2"
 	"strconv"
 	"sync"
+)
+
+const (
+	TestPassword = "test_password"
 )
 
 type TonApiServer struct {
 	conf    config.Config
 	api     *tonlib.Client
 	apiLock sync.Mutex
+	key     tonlib.InputKey
 }
 
 func NewTonApiServer(conf config.Config) (*TonApiServer, error) {
@@ -27,20 +33,39 @@ func NewTonApiServer(conf config.Config) (*TonApiServer, error) {
 		*options,
 	}
 
-	client, err := tonlib.NewClient(&req, tonlib.Config{}, 10)
+	client, err := tonlib.NewClient(&req, tonlib.Config{}, 10, true, 9)
 	if err != nil {
 		return nil, fmt.Errorf("Init client error, error: %v", err)
+	}
+
+	loc := tonlib.SecureBytes(TestPassword)
+	mem := tonlib.SecureBytes(TestPassword)
+	seed := tonlib.SecureBytes("")
+
+	pKey, err := client.CreateNewKey(loc, mem, seed)
+	if err != nil {
+		return nil, fmt.Errorf("Ton create key for init wallet error", err)
+	}
+
+	inputKey := tonlib.InputKey{
+		"inputKeyRegular",
+		base64.StdEncoding.EncodeToString(loc),
+		tonlib.TONPrivateKey{
+			pKey.PublicKey,
+			pKey.Secret,
+		},
 	}
 
 	return &TonApiServer{
 		conf: conf,
 		api:  client,
+		key:  inputKey,
 	}, nil
 }
 
 func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransactionsRequest) (*pb.FetchTransactionsResponse, error) {
 	s.apiLock.Lock()
-	resp, err := s.api.RawGetTransactions(tonlib.NewAccountAddress(in.Address), tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)))
+	resp, err := s.api.RawGetTransactions(*tonlib.NewAccountAddress(in.Address), *tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)), s.key)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +124,7 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 
 func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountStateRequest) (*pb.GetAccountStateResponse, error) {
 	s.apiLock.Lock()
-	resp, err := s.api.RawGetAccountState(tonlib.NewAccountAddress(in.AccountAddress))
+	resp, err := s.api.RawGetAccountState(*tonlib.NewAccountAddress(in.AccountAddress))
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +148,7 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest) (*pb.GetBetSeedResponse, error) {
 	s.apiLock.Lock()
 	address := tonlib.NewAccountAddress(s.conf.TonAPI.DiceAddress)
-	smcInfo, err := s.api.SmcLoad(address)
+	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +199,7 @@ func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest)
 func (s *TonApiServer) GetSeqno(ctx context.Context, in *pb.GetSeqnoRequest) (*pb.GetSeqnoResponse, error) {
 	s.apiLock.Lock()
 	address := tonlib.NewAccountAddress(s.conf.TonAPI.DiceAddress)
-	smcInfo, err := s.api.SmcLoad(address)
+	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
 		return nil, err
 	}

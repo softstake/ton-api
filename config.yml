@@ -1,6 +1,6 @@
 TonAPI:
   TonConfig: "tonlib.config.json.example"
-  DiceAddress: "kQBORXUnT4HjFLxx06X9b0VONDJeHDOGrJe5MbYwIjieWYvJ"
+  DiceAddress: "kQBgMySA9l-X185xzrEm20M0INDbi0AavYOog9p0133yq-ZJ"
   GetBetMethodID: 110679
   LiteClient: "bin/lite-client"
   LiteClientConfig: "ton-lite-client-test1.config.json"

@@ -19,4 +19,5 @@ COPY --from=builder /go/src/build/lib/linux /usr/lib/
 RUN apk add --no-cache libstdc++
 WORKDIR /usr/local/bin/app/
 RUN mkdir test.keys
+EXPOSE 5400
 ENTRYPOINT ./ton-api
