@@ -67,7 +67,9 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 	s.apiLock.Lock()
 	resp, err := s.api.RawGetTransactions(*tonlib.NewAccountAddress(in.Address), *tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)), s.key)
 	if err != nil {
-		return nil, err
+		// need to restart container
+		panic(err)
+		//return nil, err
 	}
 	s.apiLock.Unlock()
 
@@ -126,7 +128,9 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 	s.apiLock.Lock()
 	resp, err := s.api.RawGetAccountState(*tonlib.NewAccountAddress(in.AccountAddress))
 	if err != nil {
-		return nil, err
+		// need to restart container
+		panic(err)
+		//return nil, err
 	}
 	s.apiLock.Unlock()
 
@@ -150,7 +154,9 @@ func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest)
 	address := tonlib.NewAccountAddress(s.conf.TonAPI.DiceAddress)
 	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
-		return nil, err
+		// need to restart container
+		panic(err)
+		//return nil, err
 	}
 	s.apiLock.Unlock()
 
@@ -201,7 +207,9 @@ func (s *TonApiServer) GetSeqno(ctx context.Context, in *pb.GetSeqnoRequest) (*p
 	address := tonlib.NewAccountAddress(s.conf.TonAPI.DiceAddress)
 	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
-		return nil, err
+		// need to restart container
+		panic(err)
+		//return nil, err
 	}
 	s.apiLock.Unlock()
 
@@ -235,7 +243,9 @@ func (s *TonApiServer) SendMessage(ctx context.Context, in *pb.SendMessageReques
 	s.apiLock.Lock()
 	resp, err := s.api.RawSendMessage(in.Body)
 	if err != nil {
-		return nil, err
+		// need to restart container
+		panic(err)
+		//return nil, err
 	}
 	s.apiLock.Unlock()
 
@@ -250,7 +260,9 @@ func (s *TonApiServer) runGetMethod(id int64, method interface{}, stack []tonlib
 	s.apiLock.Lock()
 	resp, err := s.api.SmcRunGetMethod(id, method, stack)
 	if err != nil {
-		return nil, err
+		// need to restart container
+		panic(err)
+		//return nil, err
 	}
 	s.apiLock.Unlock()
 
