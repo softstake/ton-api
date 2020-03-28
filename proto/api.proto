@@ -6,12 +6,12 @@ package api;
 //import "google/protobuf/any.proto";
 
 service TonApi {
-    rpc FetchTransactions (FetchTransactionsRequest) returns (FetchTransactionsResponse) {}
-    rpc GetAccountState (GetAccountStateRequest) returns (GetAccountStateResponse) {}
+    rpc FetchTransactions (FetchTransactionsRequest) returns (FetchTransactionsResponse) {} // Used by ton-dice-web-worker
+    rpc GetAccountState (GetAccountStateRequest) returns (GetAccountStateResponse) {}       // Used by ton-dice-web-worker, ton-dice-web-server
     // rpc RunGetMethod (RunGetMethodRequest) returns (RunGetMethodResponse) {}
-    rpc GetBetSeed (GetBetSeedRequest) returns (GetBetSeedResponse) {}
-    rpc GetSeqno (GetSeqnoRequest) returns (GetSeqnoResponse) {}
-    rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {}
+    rpc GetBetSeed (GetBetSeedRequest) returns (GetBetSeedResponse) {}                      // Used by ton-dice-web-worker
+    rpc GetSeqno (GetSeqnoRequest) returns (GetSeqnoResponse) {}                            // Used by ton-dice-web-worker
+    rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {}                    // Used by ton-dice-web-worker 
 }
 
 message FetchTransactionsRequest {
