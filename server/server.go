@@ -79,11 +79,11 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 		inMsg := pb.RawMessage{
 			BodyHash:    trx.InMsg.BodyHash,
 			CreatedLt:   int64(trx.InMsg.CreatedLt),
-			Destination: trx.InMsg.Destination,
+			Destination: trx.InMsg.Destination.AccountAddress,
 			FwdFee:      int64(trx.InMsg.FwdFee),
 			IhrFee:      int64(trx.InMsg.IhrFee),
-			Message:     trx.InMsg.Message,
-			Source:      trx.InMsg.Source,
+			Message:     trx.InMsg.MsgData.Text,
+			Source:      trx.InMsg.Source.AccountAddress,
 			Value:       int64(trx.InMsg.Value),
 		}
 
@@ -92,11 +92,11 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 			tmp := &pb.RawMessage{
 				BodyHash:    msg.BodyHash,
 				CreatedLt:   int64(msg.CreatedLt),
-				Destination: msg.Destination,
+				Destination: msg.Destination.AccountAddress,
 				FwdFee:      int64(msg.FwdFee),
 				IhrFee:      int64(msg.IhrFee),
-				Message:     msg.Message,
-				Source:      msg.Source,
+				Message:     trx.InMsg.MsgData.Text,
+				Source:      msg.Source.AccountAddress,
 				Value:       int64(msg.Value),
 			}
 			outMsgs = append(outMsgs, tmp)
