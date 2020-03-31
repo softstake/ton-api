@@ -2,7 +2,7 @@
 grpc proxy into tonlib-go
 
 TODO:
- - Fix Dockerfile because ./lib/ was deleted from tonlib-go
+ + Fix Dockerfile because ./lib/ was deleted from tonlib-go
  - Add LISTEN_PORT ENV var instead of port hardcode
  - Remove liteclient stuff from config
  - Remove GetBetMethodID from config

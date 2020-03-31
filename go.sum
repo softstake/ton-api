@@ -88,11 +88,7 @@ github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzR
 github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/mattn/go-sqlite3 v1.10.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
-github.com/mercuryoio/tonlib-go v1.2.0 h1:GILtd1n21kluz5jnbqlzcEJYwgCm57OPqMxwxpQ1vBM=
-github.com/mercuryoio/tonlib-go v1.2.0/go.mod h1:VqlQBIDyu0UZhWg8BeZQLEzGZoXbLHW6OUxb09SR6SI=
-github.com/mercuryoio/tonlib-go/v2 v2.1.0 h1:RVkTWuORK0SD1tH9jQjSo18E5S0ozmP1QhrPF7zUvIU=
-github.com/mercuryoio/tonlib-go/v2 v2.1.0/go.mod h1:ePKtH0tBxdOXhlDqEmgxmo1YZPYWJ4Oaix0DRxXqD8k=
-github.com/mercuryoio/tonlib-go/v2 v2.2.0/go.mod h1:ePKtH0tBxdOXhlDqEmgxmo1YZPYWJ4Oaix0DRxXqD8k=
+github.com/mercuryoio/tonlib-go/v2 v2.2.2/go.mod h1:ePKtH0tBxdOXhlDqEmgxmo1YZPYWJ4Oaix0DRxXqD8k=
 github.com/mitchellh/go-homedir v1.1.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
 github.com/mitchellh/mapstructure v1.1.2 h1:fmNYVwqnSfB9mZU6OS2O6GsXM+wcskZDuKQzvN1EDeE=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
@@ -148,8 +144,7 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
-github.com/tonradar/tonlib-go/v2 v2.0.2 h1:34NJjKTl8sa1bmLzcsPqv+yEnRnotcf9ZNG5vflZAqk=
-github.com/tonradar/tonlib-go/v2 v2.0.2/go.mod h1:+R5R1C2cnpiZot4MVYwShgPlJK5cku8fwoRxfTnM/mo=
+github.com/tonradar/tonlib-go v1.1.1 h1:rk+jHBf9wBJazy8Kp13K1xDkfFbAfmyJmz2w8ZeM6rM=
 github.com/tonradar/tonlib-go/v2 v2.0.9 h1:tniLWdU25oitt9QqNcTYFuTkeXiFR7eXcCjQG0a2vwQ=
 github.com/tonradar/tonlib-go/v2 v2.0.9/go.mod h1:+R5R1C2cnpiZot4MVYwShgPlJK5cku8fwoRxfTnM/mo=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
