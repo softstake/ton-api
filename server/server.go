@@ -3,12 +3,14 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"strconv"
+	"sync"
+
 	"github.com/tonradar/ton-api/config"
 	pb "github.com/tonradar/ton-api/proto"
 	tonlib "github.com/tonradar/tonlib-go/v2"
-	"strconv"
-	"sync"
 )
 
 const (
@@ -133,6 +135,10 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 		//return nil, err
 	}
 	s.apiLock.Unlock()
+
+	if !isRawFullAccountState(resp) {
+		return nil, errors.New("Invalid return type for GetAccountState")
+	}
 
 	transactionId := &pb.InternalTransactionId{
 		Hash: resp.LastTransactionId.Hash,
