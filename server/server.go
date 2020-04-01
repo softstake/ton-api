@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"sync"
 
+	tonlib "github.com/mercuryoio/tonlib-go/v2"
 	"github.com/tonradar/ton-api/config"
 	pb "github.com/tonradar/ton-api/proto"
-	tonlib "github.com/tonradar/tonlib-go/v2"
 )
 
 const (
@@ -78,26 +78,34 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 	trxs := make([]*pb.Transaction, 0)
 
 	for _, trx := range resp.Transactions {
+		msgData := trx.InMsg.MsgData.(map[string]interface{})
+		if msgData["@type"] != "msg.dataText" {
+			continue
+		}
 		inMsg := pb.RawMessage{
 			BodyHash:    trx.InMsg.BodyHash,
 			CreatedLt:   int64(trx.InMsg.CreatedLt),
 			Destination: trx.InMsg.Destination.AccountAddress,
 			FwdFee:      int64(trx.InMsg.FwdFee),
 			IhrFee:      int64(trx.InMsg.IhrFee),
-			Message:     trx.InMsg.MsgData.Text,
+			Message:     msgData["text"].(string),
 			Source:      trx.InMsg.Source.AccountAddress,
 			Value:       int64(trx.InMsg.Value),
 		}
 
 		outMsgs := make([]*pb.RawMessage, 0)
 		for _, msg := range trx.OutMsgs {
+			msgData := trx.InMsg.MsgData.(map[string]interface{})
+			if msgData["@type"] != "msg.dataText" {
+				continue
+			}
 			tmp := &pb.RawMessage{
 				BodyHash:    msg.BodyHash,
 				CreatedLt:   int64(msg.CreatedLt),
 				Destination: msg.Destination.AccountAddress,
 				FwdFee:      int64(msg.FwdFee),
 				IhrFee:      int64(msg.IhrFee),
-				Message:     trx.InMsg.MsgData.Text,
+				Message:     msgData["text"].(string),
 				Source:      msg.Source.AccountAddress,
 				Value:       int64(msg.Value),
 			}
