@@ -8,6 +8,7 @@ RUN apt-get update \
  && mv go /usr/local/
 ENV PATH=${PATH}:/usr/local/go/bin
 WORKDIR /go/src/build
+
 ADD . .
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -installsuffix cgo -o ton-api ./cmd
 
@@ -15,7 +16,9 @@ FROM frolvlad/alpine-glibc
 COPY --from=builder /go/src/build/ton-api /usr/local/bin/app/
 COPY --from=builder /go/src/build/config.yml /usr/local/bin/app/
 COPY --from=builder /go/src/build/tonlib.config.json.example /usr/local/bin/app/
-COPY --from=builder /go/src/build/lib/linux /usr/lib/
+
+COPY --from=it4addict/ton-build /ton/build/tonlib/libtonlibjson.so  /usr/lib/
+
 RUN apk add --no-cache libstdc++
 WORKDIR /usr/local/bin/app/
 RUN mkdir test.keys
