@@ -2,25 +2,27 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net"
+
 	"github.com/tonradar/ton-api/config"
 	pb "github.com/tonradar/ton-api/proto"
 	"github.com/tonradar/ton-api/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"log"
-	"net"
 )
 
 func main() {
-	cfg := config.GetConfig("config")
-	fmt.Println(cfg)
+	cfg := config.GetConfig()
+	log.Println(cfg)
 
 	server, err := server.NewTonApiServer(cfg)
 	if err != nil {
 		log.Fatalf("failed to init api: %v", err)
 	}
 
-	listener, err := net.Listen("tcp", ":5400")
+	port := fmt.Sprintf(":%d", cfg.ListenPort)
+	listener, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatal("failed to listen: %v", err)
 	}
