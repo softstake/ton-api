@@ -3,6 +3,7 @@ module github.com/tonradar/ton-api
 go 1.13
 
 require (
+	github.com/caarlos0/env/v6 v6.2.1
 	github.com/cloudflare/cfssl v1.4.1
 	github.com/golang/protobuf v1.3.3
 	github.com/mercuryoio/tonlib-go/v2 v2.2.2

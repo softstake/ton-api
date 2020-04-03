@@ -1,41 +1,21 @@
 package config
 
 import (
-	"github.com/cloudflare/cfssl/log"
-	"github.com/spf13/viper"
+	"log"
+
+	"github.com/caarlos0/env/v6"
 )
 
-var configType = "yml"
-
-type TonApiConfig struct {
-	TonConfig        string
-	DiceAddress      string
-	GetBetMethodID   int32
-	LiteClient       string
-	LiteClientConfig string
+type TonAPIConfig struct {
+	TonlibCfgPath string `env:"TONLIB_CFG_PATH" envDefault:"/usr/local/bin/app/tonlib.config.json.example"`
+	ListenPort    int32  `env:"LISTEN_PORT" envDefault:"5400"`
+	ContractAddr  string `env:"CONTRACT_ADDR,required"`
 }
 
-type Config struct {
-	TonAPI TonApiConfig
-}
-
-var Configuration Config
-
-func GetConfig(configName string) Config {
-
-	viper.SetConfigName(configName)
-	viper.AddConfigPath("./")
-	viper.SetConfigType(configType)
-
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Error reading config file, %s", err)
+func GetConfig() TonAPIConfig {
+	cfg := &TonAPIConfig{}
+	if err := env.Parse(cfg); err != nil {
+		log.Fatal("Cannot parse initial ENV vars: ", err)
 	}
-
-	err := viper.Unmarshal(&Configuration)
-
-	if err != nil {
-		log.Fatalf("unable to decode into struct, %v", err)
-	}
-
-	return Configuration
+	return *cfg
 }

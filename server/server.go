@@ -18,14 +18,14 @@ const (
 )
 
 type TonApiServer struct {
-	conf    config.Config
+	conf    config.TonAPIConfig
 	api     *tonlib.Client
 	apiLock sync.Mutex
 	key     tonlib.InputKey
 }
 
-func NewTonApiServer(conf config.Config) (*TonApiServer, error) {
-	options, err := tonlib.ParseConfigFile(conf.TonAPI.TonConfig)
+func NewTonApiServer(conf config.TonAPIConfig) (*TonApiServer, error) {
+	options, err := tonlib.ParseConfigFile(conf.TonlibCfgPath)
 	if err != nil {
 		return nil, fmt.Errorf("Config file not found, error: %v", err)
 	}
@@ -165,7 +165,7 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 
 func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest) (*pb.GetBetSeedResponse, error) {
 	s.apiLock.Lock()
-	address := tonlib.NewAccountAddress(s.conf.TonAPI.DiceAddress)
+	address := tonlib.NewAccountAddress(s.conf.ContractAddr)
 	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
 		// need to restart container
@@ -218,7 +218,7 @@ func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest)
 
 func (s *TonApiServer) GetSeqno(ctx context.Context, in *pb.GetSeqnoRequest) (*pb.GetSeqnoResponse, error) {
 	s.apiLock.Lock()
-	address := tonlib.NewAccountAddress(s.conf.TonAPI.DiceAddress)
+	address := tonlib.NewAccountAddress(s.conf.ContractAddr)
 	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
 		// need to restart container
