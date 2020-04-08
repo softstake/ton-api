@@ -79,8 +79,9 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 
 	for _, trx := range resp.Transactions {
 		msgData := trx.InMsg.MsgData.(map[string]interface{})
-		if msgData["@type"] != "msg.dataText" {
-			continue
+		msgDataText := ""
+		if msgData["@type"] == "msg.dataText" {
+			msgDataText = msgData["text"].(string)
 		}
 		inMsg := pb.RawMessage{
 			BodyHash:    trx.InMsg.BodyHash,
@@ -88,16 +89,17 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 			Destination: trx.InMsg.Destination.AccountAddress,
 			FwdFee:      int64(trx.InMsg.FwdFee),
 			IhrFee:      int64(trx.InMsg.IhrFee),
-			Message:     msgData["text"].(string),
+			Message:     msgDataText,
 			Source:      trx.InMsg.Source.AccountAddress,
 			Value:       int64(trx.InMsg.Value),
 		}
 
 		outMsgs := make([]*pb.RawMessage, 0)
 		for _, msg := range trx.OutMsgs {
-			msgData := trx.InMsg.MsgData.(map[string]interface{})
-			if msgData["@type"] != "msg.dataText" {
-				continue
+			msgData := msg.MsgData.(map[string]interface{})
+			msgDataText := ""
+			if msgData["@type"] == "msg.dataText" {
+				msgDataText = msgData["text"].(string)
 			}
 			tmp := &pb.RawMessage{
 				BodyHash:    msg.BodyHash,
@@ -105,7 +107,7 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 				Destination: msg.Destination.AccountAddress,
 				FwdFee:      int64(msg.FwdFee),
 				IhrFee:      int64(msg.IhrFee),
-				Message:     msgData["text"].(string),
+				Message:     msgDataText,
 				Source:      msg.Source.AccountAddress,
 				Value:       int64(msg.Value),
 			}
@@ -244,8 +246,6 @@ func (s *TonApiServer) GetSeqno(ctx context.Context, in *pb.GetSeqnoRequest) (*p
 		return nil, err
 	}
 
-	fmt.Println("seqno:", res)
-
 	resNum := res[0].(map[string]interface{})["number"].(map[string]interface{})["number"].(string)
 
 	return &pb.GetSeqnoResponse{
@@ -262,8 +262,6 @@ func (s *TonApiServer) SendMessage(ctx context.Context, in *pb.SendMessageReques
 		//return nil, err
 	}
 	s.apiLock.Unlock()
-
-	fmt.Println("send message response:", resp)
 
 	return &pb.SendMessageResponse{
 		Ok: resp.Type,
