@@ -173,8 +173,6 @@ func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRe
 	address := tonlib.NewAccountAddress(s.conf.ContractAddr)
 	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
-		// need to restart container
-		//panic(err)
 		s.api.UpdateTonConnection()
 		return nil, err
 	}
@@ -197,79 +195,69 @@ func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRe
 		return nil, err
 	}
 
-	var items tonlib.TvmStackEntryList
+	var bets CustomTvmStackEntry
 	asBytes, err := json.Marshal(res[0])
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(asBytes, &items)
+	err = json.Unmarshal(asBytes, &bets)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("bets:", items)
-
-	fmt.Println("len:", len(items.List.Elements))
-
-	var Bets []*pb.Bet
-	for _, element := range items.List.Elements {
-		var item tonlib.TvmStackEntryTuple
-		asBytes, err := json.Marshal(element)
-		if err != nil {
-			return nil, err
-		}
-		err = json.Unmarshal(asBytes, &item)
+	var activeBets []*pb.ActiveBet
+	for _, bet := range bets.List.Elements {
+		betId, err := strconv.Atoi(bet.ID.Number.(string))
 		if err != nil {
 			return nil, err
 		}
 
-		rawBetId := item.Tuple.Elements[0]
-		rawBetParams := item.Tuple.Elements[1]
-
-		var betId tonlib.TvmStackEntryNumber
-		asBytes, err = json.Marshal(rawBetId)
+		params := bet.Parameters.Tuple.Elements
+		rollUnder, err := strconv.Atoi(params[0].Number.(string))
 		if err != nil {
 			return nil, err
 		}
-		err = json.Unmarshal(asBytes, &betId)
+		amount, err := strconv.Atoi(params[1].Number.(string))
 		if err != nil {
 			return nil, err
 		}
-
-		BetID := betId.Number.(map[string]interface{})["number"].(string)
-
-		var betParams tonlib.TvmStackEntryTuple
-		asBytes, err = json.Marshal(rawBetParams)
+		wc1, err := strconv.Atoi(params[2].Number.(string))
 		if err != nil {
 			return nil, err
 		}
-		err = json.Unmarshal(asBytes, &betParams)
+		address1 := params[3].Number.(string)
 		if err != nil {
 			return nil, err
 		}
+		wc2, err := strconv.Atoi(params[4].Number.(string))
+		if err != nil {
+			return nil, err
+		}
+		address2 := params[5].Number.(string)
+		if err != nil {
+			return nil, err
+		}
+		refBonus, err := strconv.Atoi(params[6].Number.(string))
+		if err != nil {
+			return nil, err
+		}
+		seed := params[7].Number.(string)
 
-		var BetParams []string
-		for _, element := range betParams.Tuple.Elements {
-			var numberParam tonlib.TvmStackEntryNumber
-			asBytes, err = json.Marshal(element)
-			if err != nil {
-				return nil, err
-			}
-			err = json.Unmarshal(asBytes, &numberParam)
-			if err != nil {
-				return nil, err
-			}
-
-			param := numberParam.Number.(map[string]interface{})["number"]
-			BetParams = append(BetParams, param.(string))
+		bet := &pb.ActiveBet{
+			Id:            int32(betId),
+			RollUnder:     int32(rollUnder),
+			Amount:        int64(amount),
+			PlayerAddress: &pb.TonAddress{Workchain: int32(wc1), Address: address1},
+			RefAddress:    &pb.TonAddress{Workchain: int32(wc2), Address: address2},
+			RefBonus:      int64(refBonus),
+			Seed:          seed,
 		}
 
-		bet := pb.Bet{Id: BetID, Params: BetParams}
-		Bets = append(Bets, &bet)
+		activeBets = append(activeBets, bet)
 	}
 
 	return &pb.GetActiveBetsResponse{
-		Bets: Bets,
+		Bets: activeBets,
 	}, nil
 }
 

@@ -104,15 +104,25 @@ message GetBetSeedResponse {
     string seed = 1;
 }
 
-message Bet {
-    string id = 1;
-    repeated string params = 2;
+message TonAddress {
+    int32 workchain = 1;
+    string address = 2;
+}
+
+message ActiveBet {
+    int32 id = 1;
+    int32 roll_under = 2;
+    int64 amount = 3;
+    TonAddress player_address = 4;
+    TonAddress ref_address = 5;
+    int64 ref_bonus = 6;
+    string seed = 7;
 }
 
 message GetActiveBetsRequest {}
 
 message GetActiveBetsResponse {
-    repeated Bet bets = 1;
+    repeated ActiveBet bets = 1;
 }
 
 message GetSeqnoRequest {}
