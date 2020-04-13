@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -196,12 +197,79 @@ func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRe
 		return nil, err
 	}
 
-	fmt.Println("bets:", res)
+	var items tonlib.TvmStackEntryList
+	asBytes, err := json.Marshal(res[0])
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(asBytes, &items)
+	if err != nil {
+		return nil, err
+	}
 
-	bets := res[0].(map[string]interface{})["number"].(map[string]interface{})["number"].(string)
+	fmt.Println("bets:", items)
+
+	fmt.Println("len:", len(items.List.Elements))
+
+	var Bets []*pb.Bet
+	for _, element := range items.List.Elements {
+		var item tonlib.TvmStackEntryTuple
+		asBytes, err := json.Marshal(element)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(asBytes, &item)
+		if err != nil {
+			return nil, err
+		}
+
+		rawBetId := item.Tuple.Elements[0]
+		rawBetParams := item.Tuple.Elements[1]
+
+		var betId tonlib.TvmStackEntryNumber
+		asBytes, err = json.Marshal(rawBetId)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(asBytes, &betId)
+		if err != nil {
+			return nil, err
+		}
+
+		BetID := betId.Number.(map[string]interface{})["number"].(string)
+
+		var betParams tonlib.TvmStackEntryTuple
+		asBytes, err = json.Marshal(rawBetParams)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(asBytes, &betParams)
+		if err != nil {
+			return nil, err
+		}
+
+		var BetParams []string
+		for _, element := range betParams.Tuple.Elements {
+			var numberParam tonlib.TvmStackEntryNumber
+			asBytes, err = json.Marshal(element)
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal(asBytes, &numberParam)
+			if err != nil {
+				return nil, err
+			}
+
+			param := numberParam.Number.(map[string]interface{})["number"]
+			BetParams = append(BetParams, param.(string))
+		}
+
+		bet := pb.Bet{Id: BetID, Params: BetParams}
+		Bets = append(Bets, &bet)
+	}
 
 	return &pb.GetActiveBetsResponse{
-		Bets: bets,
+		Bets: Bets,
 	}, nil
 }
 

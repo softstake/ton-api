@@ -104,10 +104,15 @@ message GetBetSeedResponse {
     string seed = 1;
 }
 
+message Bet {
+    string id = 1;
+    repeated string params = 2;
+}
+
 message GetActiveBetsRequest {}
 
 message GetActiveBetsResponse {
-    string bets = 1;
+    repeated Bet bets = 1;
 }
 
 message GetSeqnoRequest {}
