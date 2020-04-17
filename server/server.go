@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -70,8 +71,9 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 	resp, err := s.api.RawGetTransactions(*tonlib.NewAccountAddress(in.Address), *tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)), s.key)
 	if err != nil {
 		// need to restart container
-		panic(err)
-		//return nil, err
+		//panic(err)
+		s.api.UpdateTonConnection()
+		return nil, err
 	}
 	s.apiLock.Unlock()
 
@@ -141,8 +143,9 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 	resp, err := s.api.RawGetAccountState(*tonlib.NewAccountAddress(in.AccountAddress))
 	if err != nil {
 		// need to restart container
-		panic(err)
-		//return nil, err
+		//panic(err)
+		s.api.UpdateTonConnection()
+		return nil, err
 	}
 	s.apiLock.Unlock()
 
@@ -165,14 +168,125 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 	}, nil
 }
 
+func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRequest) (*pb.GetActiveBetsResponse, error) {
+	s.apiLock.Lock()
+	address := tonlib.NewAccountAddress(s.conf.ContractAddr)
+	smcInfo, err := s.api.SmcLoad(*address)
+	if err != nil {
+		s.api.UpdateTonConnection()
+		return nil, err
+	}
+	s.apiLock.Unlock()
+
+	methodName := "active_bets"
+	methodID := struct {
+		Type  string `json:"@type"`
+		Extra string `json:"@extra"`
+		Name  string `json:"name"`
+	}{
+		Type: "smc.methodIdName",
+		Name: methodName,
+	}
+
+	stack := make([]tonlib.TvmStackEntry, 0)
+
+	res, err := s.runGetMethod(smcInfo.Id, methodID, stack)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+
+	var bets CustomTvmStackEntry
+	asBytes, err := json.Marshal(res[0])
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(asBytes, &bets)
+	if err != nil {
+		return nil, err
+	}
+
+	var activeBets []*pb.ActiveBet
+	for _, element := range bets.List.Elements {
+		betIdStr := element.Tuple.Elements[0].(map[string]interface{})["number"].(map[string]interface{})["number"].(string)
+		betId, err := strconv.Atoi(betIdStr)
+		if err != nil {
+			return nil, err
+		}
+
+		other := element.Tuple.Elements[1]
+
+		var tmp _CustomTvmStackEntryTuple
+		asBytes, err := json.Marshal(other)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(asBytes, &tmp)
+		if err != nil {
+			return nil, err
+		}
+
+		params := tmp.Tuple.Elements
+		rollUnder, err := strconv.Atoi(params[0].Number.(map[string]interface{})["number"].(string))
+		if err != nil {
+			return nil, err
+		}
+		amount, err := strconv.Atoi(params[1].Number.(map[string]interface{})["number"].(string))
+		if err != nil {
+			return nil, err
+		}
+		wc1, err := strconv.Atoi(params[2].Number.(map[string]interface{})["number"].(string))
+		if err != nil {
+			return nil, err
+		}
+		address1 := params[3].Number.(map[string]interface{})["number"].(string)
+		if err != nil {
+			return nil, err
+		}
+		wc2, err := strconv.Atoi(params[4].Number.(map[string]interface{})["number"].(string))
+		if err != nil {
+			return nil, err
+		}
+		address2 := params[5].Number.(map[string]interface{})["number"].(string)
+		if err != nil {
+			return nil, err
+		}
+		refBonus, err := strconv.Atoi(params[6].Number.(map[string]interface{})["number"].(string))
+		if err != nil {
+			return nil, err
+		}
+		seed := params[7].Number.(map[string]interface{})["number"].(string)
+
+		bet := &pb.ActiveBet{
+			Id:            int32(betId),
+			RollUnder:     int32(rollUnder),
+			Amount:        int64(amount),
+			PlayerAddress: &pb.TonAddress{Workchain: int32(wc1), Address: address1},
+			RefAddress:    &pb.TonAddress{Workchain: int32(wc2), Address: address2},
+			RefBonus:      int64(refBonus),
+			Seed:          seed,
+		}
+
+		activeBets = append(activeBets, bet)
+	}
+
+	return &pb.GetActiveBetsResponse{
+		Bets: activeBets,
+	}, nil
+}
+
 func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest) (*pb.GetBetSeedResponse, error) {
 	s.apiLock.Lock()
 	address := tonlib.NewAccountAddress(s.conf.ContractAddr)
 	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
 		// need to restart container
-		panic(err)
-		//return nil, err
+		//panic(err)
+		s.api.UpdateTonConnection()
+		return nil, err
 	}
 	s.apiLock.Unlock()
 
@@ -211,6 +325,11 @@ func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest)
 	if err != nil {
 		return nil, err
 	}
+
+	if len(res) == 0 {
+		return nil, fmt.Errorf("Вad result smartcontract get method")
+	}
+
 	resNum := res[0].(map[string]interface{})["number"].(map[string]interface{})["number"].(string)
 
 	return &pb.GetBetSeedResponse{
@@ -224,8 +343,9 @@ func (s *TonApiServer) GetSeqno(ctx context.Context, in *pb.GetSeqnoRequest) (*p
 	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
 		// need to restart container
-		panic(err)
-		//return nil, err
+		//panic(err)
+		s.api.UpdateTonConnection()
+		return nil, err
 	}
 	s.apiLock.Unlock()
 
@@ -258,8 +378,9 @@ func (s *TonApiServer) SendMessage(ctx context.Context, in *pb.SendMessageReques
 	resp, err := s.api.RawSendMessage(in.Body)
 	if err != nil {
 		// need to restart container
-		panic(err)
-		//return nil, err
+		//panic(err)
+		s.api.UpdateTonConnection()
+		return nil, err
 	}
 	s.apiLock.Unlock()
 
@@ -273,8 +394,9 @@ func (s *TonApiServer) runGetMethod(id int64, method interface{}, stack []tonlib
 	resp, err := s.api.SmcRunGetMethod(id, method, stack)
 	if err != nil {
 		// need to restart container
-		panic(err)
-		//return nil, err
+		//panic(err)
+		s.api.UpdateTonConnection()
+		return nil, err
 	}
 	s.apiLock.Unlock()
 
