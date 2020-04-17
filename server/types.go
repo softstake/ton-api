@@ -6,25 +6,25 @@ import (
 
 type CustomTvmTuple struct {
 	tonlib.TvmTuple
-	Elements []tonlib.TvmStackEntryNumber
+	Elements []tonlib.TvmStackEntryNumber `json:"elements"`
+}
+
+type _CustomTvmStackEntryTuple struct {
+	tonlib.TvmStackEntryTuple
+	Tuple CustomTvmTuple `json:"tuple"`
 }
 
 type CustomTvmStackEntryTuple struct {
 	tonlib.TvmStackEntryTuple
-	Tuple CustomTvmTuple
-}
-
-type ActiveBet struct {
-	ID         tonlib.TvmStackEntryNumber
-	Parameters CustomTvmStackEntryTuple
+	Tuple tonlib.TvmTuple `json:"tuple"`
 }
 
 type CustomTvmList struct {
 	tonlib.TvmList
-	Elements []ActiveBet
+	Elements []CustomTvmStackEntryTuple `json:"elements"`
 }
 
 type CustomTvmStackEntry struct {
 	tonlib.TvmStackEntryList
-	List CustomTvmList
+	List CustomTvmList `json:"list"`
 }

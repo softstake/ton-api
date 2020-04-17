@@ -195,6 +195,10 @@ func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRe
 		return nil, err
 	}
 
+	if len(res) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+
 	var bets CustomTvmStackEntry
 	asBytes, err := json.Marshal(res[0])
 	if err != nil {
@@ -206,42 +210,55 @@ func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRe
 	}
 
 	var activeBets []*pb.ActiveBet
-	for _, bet := range bets.List.Elements {
-		betId, err := strconv.Atoi(bet.ID.Number.(string))
+	for _, element := range bets.List.Elements {
+		betIdStr := element.Tuple.Elements[0].(map[string]interface{})["number"].(map[string]interface{})["number"].(string)
+		betId, err := strconv.Atoi(betIdStr)
 		if err != nil {
 			return nil, err
 		}
 
-		params := bet.Parameters.Tuple.Elements
-		rollUnder, err := strconv.Atoi(params[0].Number.(string))
+		other := element.Tuple.Elements[1]
+
+		var tmp _CustomTvmStackEntryTuple
+		asBytes, err := json.Marshal(other)
 		if err != nil {
 			return nil, err
 		}
-		amount, err := strconv.Atoi(params[1].Number.(string))
+		err = json.Unmarshal(asBytes, &tmp)
 		if err != nil {
 			return nil, err
 		}
-		wc1, err := strconv.Atoi(params[2].Number.(string))
+
+		params := tmp.Tuple.Elements
+		rollUnder, err := strconv.Atoi(params[0].Number.(map[string]interface{})["number"].(string))
 		if err != nil {
 			return nil, err
 		}
-		address1 := params[3].Number.(string)
+		amount, err := strconv.Atoi(params[1].Number.(map[string]interface{})["number"].(string))
 		if err != nil {
 			return nil, err
 		}
-		wc2, err := strconv.Atoi(params[4].Number.(string))
+		wc1, err := strconv.Atoi(params[2].Number.(map[string]interface{})["number"].(string))
 		if err != nil {
 			return nil, err
 		}
-		address2 := params[5].Number.(string)
+		address1 := params[3].Number.(map[string]interface{})["number"].(string)
 		if err != nil {
 			return nil, err
 		}
-		refBonus, err := strconv.Atoi(params[6].Number.(string))
+		wc2, err := strconv.Atoi(params[4].Number.(map[string]interface{})["number"].(string))
 		if err != nil {
 			return nil, err
 		}
-		seed := params[7].Number.(string)
+		address2 := params[5].Number.(map[string]interface{})["number"].(string)
+		if err != nil {
+			return nil, err
+		}
+		refBonus, err := strconv.Atoi(params[6].Number.(map[string]interface{})["number"].(string))
+		if err != nil {
+			return nil, err
+		}
+		seed := params[7].Number.(map[string]interface{})["number"].(string)
 
 		bet := &pb.ActiveBet{
 			Id:            int32(betId),
