@@ -211,8 +211,16 @@ func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRe
 
 	var activeBets []*pb.ActiveBet
 	for _, element := range bets.List.Elements {
-		betIdStr := element.Tuple.Elements[0].(map[string]interface{})["number"].(map[string]interface{})["number"].(string)
-		betId, err := strconv.Atoi(betIdStr)
+		var betIdRaw CustomTvmStackEntryNumber
+		asBytes, err := json.Marshal(element.Tuple.Elements[0])
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(asBytes, &betIdRaw)
+		if err != nil {
+			return nil, err
+		}
+		betId, err := strconv.Atoi(betIdRaw.Number.Number)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +228,7 @@ func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRe
 		other := element.Tuple.Elements[1]
 
 		var tmp _CustomTvmStackEntryTuple
-		asBytes, err := json.Marshal(other)
+		asBytes, err = json.Marshal(other)
 		if err != nil {
 			return nil, err
 		}
@@ -230,35 +238,36 @@ func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRe
 		}
 
 		params := tmp.Tuple.Elements
-		rollUnder, err := strconv.Atoi(params[0].Number.(map[string]interface{})["number"].(string))
+
+		rollUnder, err := strconv.Atoi(params[0].Number.Number)
 		if err != nil {
 			return nil, err
 		}
-		amount, err := strconv.Atoi(params[1].Number.(map[string]interface{})["number"].(string))
+		amount, err := strconv.Atoi(params[1].Number.Number)
 		if err != nil {
 			return nil, err
 		}
-		wc1, err := strconv.Atoi(params[2].Number.(map[string]interface{})["number"].(string))
+		wc1, err := strconv.Atoi(params[2].Number.Number)
 		if err != nil {
 			return nil, err
 		}
-		address1 := params[3].Number.(map[string]interface{})["number"].(string)
+		address1 := params[3].Number.Number
 		if err != nil {
 			return nil, err
 		}
-		wc2, err := strconv.Atoi(params[4].Number.(map[string]interface{})["number"].(string))
+		wc2, err := strconv.Atoi(params[4].Number.Number)
 		if err != nil {
 			return nil, err
 		}
-		address2 := params[5].Number.(map[string]interface{})["number"].(string)
+		address2 := params[5].Number.Number
 		if err != nil {
 			return nil, err
 		}
-		refBonus, err := strconv.Atoi(params[6].Number.(map[string]interface{})["number"].(string))
+		refBonus, err := strconv.Atoi(params[6].Number.Number)
 		if err != nil {
 			return nil, err
 		}
-		seed := params[7].Number.(map[string]interface{})["number"].(string)
+		seed := params[7].Number.Number
 
 		bet := &pb.ActiveBet{
 			Id:            int32(betId),

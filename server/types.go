@@ -4,9 +4,14 @@ import (
 	tonlib "github.com/mercuryoio/tonlib-go/v2"
 )
 
+type CustomTvmStackEntryNumber struct {
+	tonlib.TvmStackEntryNumber
+	Number tonlib.TvmNumberDecimal `json:"number"`
+}
+
 type CustomTvmTuple struct {
 	tonlib.TvmTuple
-	Elements []tonlib.TvmStackEntryNumber `json:"elements"`
+	Elements []CustomTvmStackEntryNumber `json:"elements"`
 }
 
 type _CustomTvmStackEntryTuple struct {
