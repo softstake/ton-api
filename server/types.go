@@ -1,7 +1,7 @@
 package server
 
 import (
-	tonlib "github.com/mercuryoio/tonlib-go/v2"
+	tonlib "github.com/tonradar/tonlib-go/v2"
 )
 
 type CustomTvmStackEntryNumber struct {

@@ -27,7 +27,7 @@ func main() {
 		log.Fatal("failed to listen: ", err)
 	}
 
-	rpcserv := grpc.NewServer()
+	rpcserv := grpc.NewServer(grpc.UnaryInterceptor(server.ServerUnaryInterceptor))
 
 	pb.RegisterTonApiServer(rpcserv, pb.TonApiServer(server))
 	reflection.Register(rpcserv)
