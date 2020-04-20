@@ -21,40 +21,7 @@ type TonApiServer struct {
 	conf    config.TonAPIConfig
 	api     *tonlib.Client
 	apiLock sync.Mutex
-	key     *tonlib.InputKey
-	options *tonlib.Options
-}
-
-func UpdateTonConnection(options *tonlib.Options) (*tonlib.Client, *tonlib.InputKey, error) {
-	req := tonlib.TonInitRequest{
-		"init",
-		*options,
-	}
-
-	client, err := tonlib.NewClient(&req, tonlib.Config{}, 10, true, 9)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Init client error, error: %v", err)
-	}
-
-	loc := tonlib.SecureBytes(TestPassword)
-	mem := tonlib.SecureBytes(TestPassword)
-	seed := tonlib.SecureBytes("")
-
-	pKey, err := client.CreateNewKey(loc, mem, seed)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Ton create key for init wallet error", err)
-	}
-
-	inputKey := &tonlib.InputKey{
-		"inputKeyRegular",
-		base64.StdEncoding.EncodeToString(loc),
-		tonlib.TONPrivateKey{
-			pKey.PublicKey,
-			pKey.Secret,
-		},
-	}
-
-	return client, inputKey, nil
+	key     tonlib.InputKey
 }
 
 func NewTonApiServer(conf config.TonAPIConfig) (*TonApiServer, error) {
@@ -63,18 +30,43 @@ func NewTonApiServer(conf config.TonAPIConfig) (*TonApiServer, error) {
 		return nil, fmt.Errorf("Config file not found, error: %v", err)
 	}
 
-	client, key, err := UpdateTonConnection(options)
+	req := tonlib.TonInitRequest{
+		"init",
+		*options,
+	}
+
+	client, err := tonlib.NewClient(&req, tonlib.Config{}, 10, true, 9)
+	if err != nil {
+		return nil, fmt.Errorf("Init client error, error: %v", err)
+	}
+
+	loc := tonlib.SecureBytes(TestPassword)
+	mem := tonlib.SecureBytes(TestPassword)
+	seed := tonlib.SecureBytes("")
+
+	pKey, err := client.CreateNewKey(loc, mem, seed)
+	if err != nil {
+		return nil, fmt.Errorf("Ton create key for init wallet error", err)
+	}
+
+	inputKey := tonlib.InputKey{
+		"inputKeyRegular",
+		base64.StdEncoding.EncodeToString(loc),
+		tonlib.TONPrivateKey{
+			pKey.PublicKey,
+			pKey.Secret,
+		},
+	}
 
 	return &TonApiServer{
-		conf:    conf,
-		api:     client,
-		key:     key,
-		options: options,
+		conf: conf,
+		api:  client,
+		key:  inputKey,
 	}, nil
 }
 
 func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransactionsRequest) (*pb.FetchTransactionsResponse, error) {
-	resp, err := s.api.RawGetTransactions(*tonlib.NewAccountAddress(in.Address), *tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)), *s.key)
+	resp, err := s.api.RawGetTransactions(*tonlib.NewAccountAddress(in.Address), *tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)), s.key)
 	if err != nil {
 		// need to restart container
 		//panic(err)
