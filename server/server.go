@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
-	"sync"
-
-	tonlib "github.com/mercuryoio/tonlib-go/v2"
 	"github.com/tonradar/ton-api/config"
 	pb "github.com/tonradar/ton-api/proto"
+	tonlib "github.com/tonradar/tonlib-go/v2"
+	"strconv"
+	"sync"
 )
 
 const (
@@ -22,15 +21,11 @@ type TonApiServer struct {
 	conf    config.TonAPIConfig
 	api     *tonlib.Client
 	apiLock sync.Mutex
-	key     tonlib.InputKey
+	key     *tonlib.InputKey
+	options *tonlib.Options
 }
 
-func NewTonApiServer(conf config.TonAPIConfig) (*TonApiServer, error) {
-	options, err := tonlib.ParseConfigFile(conf.TonlibCfgPath)
-	if err != nil {
-		return nil, fmt.Errorf("Config file not found, error: %v", err)
-	}
-
+func UpdateTonConnection(options *tonlib.Options) (*tonlib.Client, *tonlib.InputKey, error) {
 	req := tonlib.TonInitRequest{
 		"init",
 		*options,
@@ -38,7 +33,7 @@ func NewTonApiServer(conf config.TonAPIConfig) (*TonApiServer, error) {
 
 	client, err := tonlib.NewClient(&req, tonlib.Config{}, 10, true, 9)
 	if err != nil {
-		return nil, fmt.Errorf("Init client error, error: %v", err)
+		return nil, nil, fmt.Errorf("Init client error, error: %v", err)
 	}
 
 	loc := tonlib.SecureBytes(TestPassword)
@@ -47,10 +42,10 @@ func NewTonApiServer(conf config.TonAPIConfig) (*TonApiServer, error) {
 
 	pKey, err := client.CreateNewKey(loc, mem, seed)
 	if err != nil {
-		return nil, fmt.Errorf("Ton create key for init wallet error", err)
+		return nil, nil, fmt.Errorf("Ton create key for init wallet error", err)
 	}
 
-	inputKey := tonlib.InputKey{
+	inputKey := &tonlib.InputKey{
 		"inputKeyRegular",
 		base64.StdEncoding.EncodeToString(loc),
 		tonlib.TONPrivateKey{
@@ -59,23 +54,33 @@ func NewTonApiServer(conf config.TonAPIConfig) (*TonApiServer, error) {
 		},
 	}
 
+	return client, inputKey, nil
+}
+
+func NewTonApiServer(conf config.TonAPIConfig) (*TonApiServer, error) {
+	options, err := tonlib.ParseConfigFile(conf.TonlibCfgPath)
+	if err != nil {
+		return nil, fmt.Errorf("Config file not found, error: %v", err)
+	}
+
+	client, key, err := UpdateTonConnection(options)
+
 	return &TonApiServer{
-		conf: conf,
-		api:  client,
-		key:  inputKey,
+		conf:    conf,
+		api:     client,
+		key:     key,
+		options: options,
 	}, nil
 }
 
 func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransactionsRequest) (*pb.FetchTransactionsResponse, error) {
-	s.apiLock.Lock()
-	resp, err := s.api.RawGetTransactions(*tonlib.NewAccountAddress(in.Address), *tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)), s.key)
+	resp, err := s.api.RawGetTransactions(*tonlib.NewAccountAddress(in.Address), *tonlib.NewInternalTransactionId(in.Hash, tonlib.JSONInt64(in.Lt)), *s.key)
 	if err != nil {
 		// need to restart container
 		//panic(err)
-		s.api.UpdateTonConnection()
+		//s.api.UpdateTonConnection()
 		return nil, err
 	}
-	s.apiLock.Unlock()
 
 	trxs := make([]*pb.Transaction, 0)
 
@@ -139,15 +144,13 @@ func (s *TonApiServer) FetchTransactions(ctx context.Context, in *pb.FetchTransa
 }
 
 func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountStateRequest) (*pb.GetAccountStateResponse, error) {
-	s.apiLock.Lock()
 	resp, err := s.api.RawGetAccountState(*tonlib.NewAccountAddress(in.AccountAddress))
 	if err != nil {
 		// need to restart container
 		//panic(err)
-		s.api.UpdateTonConnection()
+		//s.api.UpdateTonConnection()
 		return nil, err
 	}
-	s.apiLock.Unlock()
 
 	if !isRawFullAccountState(resp) {
 		return nil, errors.New("Invalid return type for GetAccountState")
@@ -169,14 +172,12 @@ func (s *TonApiServer) GetAccountState(ctx context.Context, in *pb.GetAccountSta
 }
 
 func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRequest) (*pb.GetActiveBetsResponse, error) {
-	s.apiLock.Lock()
 	address := tonlib.NewAccountAddress(s.conf.ContractAddr)
 	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
-		s.api.UpdateTonConnection()
+		//s.api.UpdateTonConnection()
 		return nil, err
 	}
-	s.apiLock.Unlock()
 
 	methodName := "active_bets"
 	methodID := struct {
@@ -287,17 +288,16 @@ func (s *TonApiServer) GetActiveBets(ctx context.Context, in *pb.GetActiveBetsRe
 	}, nil
 }
 
+// no longer in use
 func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest) (*pb.GetBetSeedResponse, error) {
-	s.apiLock.Lock()
 	address := tonlib.NewAccountAddress(s.conf.ContractAddr)
 	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
 		// need to restart container
 		//panic(err)
-		s.api.UpdateTonConnection()
+		//s.api.UpdateTonConnection()
 		return nil, err
 	}
-	s.apiLock.Unlock()
 
 	methodName := "get_bet_seed"
 	methodID := struct {
@@ -346,17 +346,16 @@ func (s *TonApiServer) GetBetSeed(ctx context.Context, in *pb.GetBetSeedRequest)
 	}, nil
 }
 
+// no longer in use
 func (s *TonApiServer) GetSeqno(ctx context.Context, in *pb.GetSeqnoRequest) (*pb.GetSeqnoResponse, error) {
-	s.apiLock.Lock()
 	address := tonlib.NewAccountAddress(s.conf.ContractAddr)
 	smcInfo, err := s.api.SmcLoad(*address)
 	if err != nil {
 		// need to restart container
 		//panic(err)
-		s.api.UpdateTonConnection()
+		//s.api.UpdateTonConnection()
 		return nil, err
 	}
-	s.apiLock.Unlock()
 
 	methodName := "get_seqno"
 	methodID := struct {
@@ -383,15 +382,13 @@ func (s *TonApiServer) GetSeqno(ctx context.Context, in *pb.GetSeqnoRequest) (*p
 }
 
 func (s *TonApiServer) SendMessage(ctx context.Context, in *pb.SendMessageRequest) (*pb.SendMessageResponse, error) {
-	s.apiLock.Lock()
 	resp, err := s.api.RawSendMessage(in.Body)
 	if err != nil {
 		// need to restart container
 		//panic(err)
-		s.api.UpdateTonConnection()
+		//s.api.UpdateTonConnection()
 		return nil, err
 	}
-	s.apiLock.Unlock()
 
 	return &pb.SendMessageResponse{
 		Ok: resp.Type,
@@ -399,15 +396,13 @@ func (s *TonApiServer) SendMessage(ctx context.Context, in *pb.SendMessageReques
 }
 
 func (s *TonApiServer) runGetMethod(id int64, method interface{}, stack []tonlib.TvmStackEntry) ([]tonlib.TvmStackEntry, error) {
-	s.apiLock.Lock()
 	resp, err := s.api.SmcRunGetMethod(id, method, stack)
 	if err != nil {
 		// need to restart container
 		//panic(err)
-		s.api.UpdateTonConnection()
+		//s.api.UpdateTonConnection()
 		return nil, err
 	}
-	s.apiLock.Unlock()
 
 	return resp.Stack, nil
 }
